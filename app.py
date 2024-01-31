@@ -1,8 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import requests
 import os
+#from flask_cors import CORS
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='')
+
+#CORS(app)
 
 # Replace 'YOUR_TICKETMASTER_API_KEY' with your actual Ticketmaster API key
 TICKETMASTER_API_KEY = os.environ.get('TICKETMASTER_API_KEY')
@@ -43,5 +46,49 @@ def get_events():
     return jsonify({'events': events})
 
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+TICKETMASTER_IMAGES_API_URL = 'https://app.ticketmaster.com/discovery/v2/events/{}/images.json'
+
+@app.route('/get_event_images_for_event', methods=['GET'])
+def get_event_images():
+    # Get the event ID from the query parameters
+    event_id = request.args.get('id')
+
+    if not event_id:
+        return jsonify({'error': 'Event ID parameter is missing, Alex'}), 400
+
+    # Make a request to the Ticketmaster Event Images API
+    images_url = TICKETMASTER_IMAGES_API_URL.format(event_id)
+    params = {
+        'apikey': TICKETMASTER_API_KEY,
+        'locale': 'en'  # You can customize the locale if needed
+    }
+
+    try:
+        response = requests.get(images_url, params=params)
+        response.raise_for_status()
+        data = response.json()
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Error connecting to Ticketmaster Event Images API: {e}'}), 500
+
+    # Extract images from the API response
+    #images = data.get('_embedded', {}).get('images', [])
+    #data is of type dict
+    #print(type(data))
+    #keys_list = list(data.keys())
+    #print(keys_list)
+    #['type', 'id', 'images', '_links']
+    images = data.get('images', [])
+
+    return jsonify({'images': images})
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+
+

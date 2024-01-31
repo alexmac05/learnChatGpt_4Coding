@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Globoticket</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+
+</head>
+<body>
+    <header>
+       <img id="logo" src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+        <h1>Globoticket - Event Search</h1>
+    </header>
+
+    <form id="city-form">
+        <label for="city">Enter City:</label>
+        <input type="text" id="city" name="city" required>
+        <button type="button" onclick="searchEvents()">Search Events</button>
+    </form>
+
+    <div id="events-list"></div>
+
+    <script>
+        function searchEvents() {
+            // Get user input (city)
+            const cityInput = document.getElementById('city');
+            const city = cityInput.value;
+
+            // Make a request to the Flask backend
+            fetch(`http://127.0.0.1:5000/get_events?city=${encodeURIComponent(city)}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Handle the response and update the UI
+                    displayEvents(data.events);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error fetching events. Please try again.');
+                });
+        }
+
+        function displayEvents(events) {
+            const eventsListDiv = document.getElementById('events-list');
+            eventsListDiv.innerHTML = '';
+
+            if (events.length === 0) {
+                eventsListDiv.innerHTML = '<p>No events found for the specified city.</p>';
+            } else {
+                const ul = document.createElement('ul');
+                events.forEach(event => {
+                    const li = document.createElement('li');
+                    li.textContent = `${event.name} | Date: ${event.date} | Venue: ${event.venue}`;
+                    ul.appendChild(li);
+                });
+                eventsListDiv.appendChild(ul);
+            }
+        }
+    </script>
+</body>
+</html>
